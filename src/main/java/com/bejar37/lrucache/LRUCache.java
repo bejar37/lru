@@ -6,70 +6,66 @@ import java.util.Map;
 public class LRUCache<K, V> {
     public final static int MINSIZE = 1;
 
-	private Map<K, Node> cache;
-    private long currentSize;
+    private Map<K, Node> cache;
 
     private final Node head; //sigil
     private final Node tail; //sigil
-	private final long maxSize;
+    private final long maxSize;
 
-	public LRUCache(long maxSize) {
-		if (maxSize < MINSIZE) {
-			throw new IllegalArgumentException(
-					"Minimum cache size is one element");
-		}
+    public LRUCache(long maxSize) {
+        if (maxSize < MINSIZE) {
+            throw new IllegalArgumentException(
+                    "Minimum cache size is one element");
+        }
 
         head = new Node();
         tail = head.insertAfter(new Node());
-		this.maxSize = maxSize;
-		cache = new HashMap<K, Node>();
-		currentSize = 0;
-	}
+        this.maxSize = maxSize;
+        cache = new HashMap<K, Node>();
+    }
 
-	public synchronized void put(K key, V value) {
+    public synchronized void put(K key, V value) {
         if (key == null) return;
-		if (currentSize >= maxSize) {
-			removeLRUElement();
-		}
-		addElem(key, value);
-	}
+        if (cache.size() >= maxSize && !cache.containsKey(key)) {
+            removeLRUElement();
+        }
+        addElem(key, value);
+    }
 
-	public synchronized V get(K key) {
-		V ret = null;
-		if (key == null) {
-			return ret;
-		}
-		if (cache.containsKey(key)) {
-			Node val = cache.get(key);
-			ret = val.getVal();
+    /**
+     * @param key
+     * @return cached value or null if key is not cached
+     */
+    public synchronized V get(K key) {
+        V ret = null;
+        if (key != null && cache.containsKey(key)) {
+            Node val = cache.get(key);
+            ret = val.getVal();
             head.insertAfter(val.removeSelf()); //recently used element goes to head of list
-		}
-		return ret;
-	}
+        }
+        return ret;
+    }
 
-	private void removeLRUElement() {
+    private void removeLRUElement() {
         //this in theory should always be true, but just in case.
         if (tail.getBefore() != head && tail.getBefore() != null) {
             Node toRemove = tail.getBefore().removeSelf(); //last element in list is LRU
             K key = toRemove.getKey();
             cache.remove(key);
-            currentSize--;
         }
-	}
-	
-	private void addElem(K key, V value) {
+    }
+
+    private void addElem(K key, V value) {
         Node newVal;
         //make sure we support "resetting" cached value
-		if (cache.containsKey(key)) {
-			newVal = cache.get(key);
-			newVal.removeSelf().setVal(value);
-		} else {
-			newVal = new Node(key, value);
-		}
-        head.insertAfter(newVal); //recently used element goes to head of list
-		cache.put(key, newVal);
-		currentSize++;
-	}
+        if (cache.containsKey(key)) {
+            newVal = cache.get(key);
+            newVal.removeSelf().setVal(value);
+        } else {
+            newVal = new Node(key, value);
+        }
+        cache.put(key, head.insertAfter(newVal)); //recently used element goes to head of list
+    }
 
     /**
      * Rudimentary double-linked list with
@@ -92,6 +88,7 @@ public class LRUCache<K, V> {
 
         /**
          * Links the node's previous node to the next node.
+         *
          * @return current object
          */
         public Node removeSelf() {
@@ -101,11 +98,14 @@ public class LRUCache<K, V> {
             if (next != null) {
                 next.setBefore(before);
             }
+            before = null;
+            next = null;
             return this;
         }
 
         /**
          * Inserts node into doubly-linked list after this node.
+         *
          * @param n to insert
          * @return inserted node
          */

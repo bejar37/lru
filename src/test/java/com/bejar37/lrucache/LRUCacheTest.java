@@ -22,7 +22,7 @@ public class LRUCacheTest {
 	
 	@Test
 	public void canRetrieveCachedItem() {
-		LRUCache<String, Integer> lru = new LRUCache<String, Integer>(1);
+		LRUCache<String, Integer> lru = new LRUCache<String, Integer>(2);
 		String k = Integer.toString(10);
 		Integer v1 = new Integer(1);
 		lru.put(k, v1);
